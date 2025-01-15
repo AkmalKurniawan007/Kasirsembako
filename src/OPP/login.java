@@ -26,10 +26,7 @@ public class login extends javax.swing.JFrame {
     public login() {
         initComponents();
     }
-    public login (Profile P){
-        
-    }
-
+  
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -107,69 +104,16 @@ public class login extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void txtUsernameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtUsernameActionPerformed
-        // TODO add your handling code here:
+        txtPassword.requestFocus();
     }//GEN-LAST:event_txtUsernameActionPerformed
 
     private void txtPasswordActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtPasswordActionPerformed
         // TODO add your handling code here:
-        txtPassword.requestFocus();
+        LoginNow();
     }//GEN-LAST:event_txtPasswordActionPerformed
 
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
-        String Uname = txtUsername.getText();
-        String pw = new String(txtPassword.getPassword());
-        
-        try {
-
-            Connection K = Koneksi.Go();
-            String Q = "SELECT * FROM users WHERE username=? AND Password=?;";
-            PreparedStatement S = K.prepareStatement(Q);
-            S.setString(1, Uname);
-            S.setString(2, pw);
-            ResultSet R = S.executeQuery();
-            int count = 0;
-            Profile P = new Profile();
-            while (R.next()) {                 
-                P.setId(R.getInt("ID")); 
-                P.setFullname(R.getString("fullname")); 
-                P.setUsername(R.getString("username")); 
-                P.setPassword(R.getString("Password")); 
-                P.setLevel(R.getString("level")); 
-                count++;
-            }
-            
-            if(count > 0){
-                JOptionPane.showMessageDialog(this, "Sukses Login");
-                switch (P.getLevel()) {
-                    case "admin" ->                         {
-                            Page_Admin A = new Page_Admin(P);
-                            A.setExtendedState(Frame.MAXIMIZED_BOTH);
-                            this.setVisible(false);
-                            A.setVisible(true);
-                        }
-//                    case "KASIR" ->                         {
-//                            HalamanUser O = new HalamanUser(P);
-//                            O.setExtendedState(Frame.MAXIMIZED_BOTH);
-//                            this.setVisible(false);
-//                            O.setVisible(true); 
-//                        }
-//                    case "owner" ->                         {
-//                            owner O = new owner(P);
-//                            O.setExtendedState(Frame.MAXIMIZED_BOTH);
-//                            this.setVisible(false);
-//                            O.setVisible(true);
-//                        }
-                    default -> {
-                    }
-                }
-            }else{
-                JOptionPane.showMessageDialog(this, "gagal");
-                txtUsername.requestFocus();
-            }
-            
-        } catch (HeadlessException | SQLException e) {
-            System.err.println(e.getMessage());
-        }
+        LoginNow();
     }//GEN-LAST:event_btnLoginActionPerformed
 
     /**
@@ -219,4 +163,55 @@ public class login extends javax.swing.JFrame {
     private javax.swing.JPasswordField txtPassword;
     private javax.swing.JTextField txtUsername;
     // End of variables declaration//GEN-END:variables
-}
+private void LoginNow() {
+
+    String user = txtUsername.getText(); // Mendapatkan username dari input pengguna
+    String pass = new String(txtPassword.getPassword()); // Mendapatkan password dari input pengguna
+
+    try {
+        // Membuat koneksi ke database
+        Connection K = Koneksi.Go();
+
+        // Query SQL menggunakan PreparedStatement untuk mencegah SQL Injection
+        String Q = "SELECT * FROM `users` WHERE username=? AND password=?";
+        PreparedStatement S = K.prepareStatement(Q);
+        S.setString(1, user);
+        S.setString(2, pass);
+        ResultSet R = S.executeQuery();
+
+        int count = 0; // Variabel untuk menghitung jumlah data yang ditemukan
+        Profile P = new Profile(); // Objek untuk menyimpan informasi profil pengguna
+
+        // Memeriksa apakah ada data yang cocok
+        while (R.next()) {
+            P.setId(R.getInt("id"));
+            P.setFullname(R.getString("fullname"));
+            P.setUsername(R.getString("username"));
+            P.setPassword(R.getString("password"));
+            P.setLevel(R.getString("level")); // Mendapatkan level pengguna (admin/kasir)
+            count++;
+        }
+
+        if (count > 0) {
+            // Jika login berhasil, arahkan ke halaman berdasarkan level pengguna
+            if (P.getLevel().equals("admin")) {
+                Page_Admin adminPage = new Page_Admin(P);
+                adminPage.setExtendedState(Frame.MAXIMIZED_BOTH);
+                this.setVisible(false);
+                adminPage.setVisible(true);
+            } else if (P.getLevel().equals("kasir")) {
+                kasir_page kasirPage = new kasir_page(P);
+                kasirPage.setExtendedState(Frame.MAXIMIZED_BOTH);
+                this.setVisible(false);
+                kasirPage.setVisible(true);
+            }
+        } else {
+            // Jika login gagal, tampilkan pesan kesalahan
+            JOptionPane.showMessageDialog(this, "Invalid username/password");
+            txtUsername.requestFocus();
+        }
+
+    } catch (HeadlessException | SQLException e) {
+        // Menangani error koneksi atau query SQL
+        System.err.println("Error: " + e.getMessage());
+    }}}
